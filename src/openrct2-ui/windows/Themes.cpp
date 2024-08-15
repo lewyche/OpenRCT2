@@ -701,16 +701,18 @@ static WindowClass window_themes_tab_7_classes[] = {
         {
             if (screenCoords.y / _row_height < GetColourSchemeTabCount())
             {
-                int32_t y2 = screenCoords.y % _row_height;
-                _colour_index_1 = screenCoords.y / _row_height;
-                _colour_index_2 = (y2) / 12;
+                _colour_index_1 = GetColourIndexFromCoordinate(screenCoords.y);
 
                 WindowClass wc = GetWindowClassTabIndex(_colour_index_1);
                 int32_t numColours = ThemeDescGetNumColours(wc);
+
+                int32_t y2 = screenCoords.y % (numColours * 14);
+                _colour_index_2 = (y2) / 14;
+
                 if (_colour_index_2 < numColours)
                 {
                     if (screenCoords.x >= _button_offset_x && screenCoords.x < _button_offset_x + 11
-                        && y2 >= _button_offset_y && y2 < _button_offset_y + 12 * 6)
+                        && y2 >= _button_offset_y && y2 < _button_offset_y + 14 * 6)
                     {
                         if (ThemeGetFlags() & UITHEME_FLAG_PREDEFINED)
                         {
@@ -766,23 +768,24 @@ static WindowClass window_themes_tab_7_classes[] = {
             screenCoords.y = 0;
             for (int32_t i = 0; i < GetColourSchemeTabCount(); i++)
             {
+                WindowClass wc = GetWindowClassTabIndex(i);
+                int32_t numColours = ThemeDescGetNumColours(wc);
+
                 if (screenCoords.y > dpi.y + dpi.height)
                 {
                     break;
                 }
                 if (screenCoords.y + _row_height >= dpi.y)
                 {
-                    WindowClass wc = GetWindowClassTabIndex(i);
-                    int32_t numColours = ThemeDescGetNumColours(wc);
                     
                     if (i + 1 < GetColourSchemeTabCount())
                     {
                         auto colour = colours[1];
 
-//                        int8_t minus = 12 * (4 - numColours);
+                        int8_t minus = 14 * (4 - numColours);
 
-                        auto leftTop = ScreenCoordsXY{ 0, screenCoords.y + _row_height - 2 };
-                        auto rightBottom = ScreenCoordsXY{ widgets[WIDX_THEMES_LIST].right, screenCoords.y + _row_height - minus - 2 };
+                        auto leftTop = ScreenCoordsXY{ 0, screenCoords.y + _row_height - minus - 1 };
+                        auto rightBottom = ScreenCoordsXY{ widgets[WIDX_THEMES_LIST].right, screenCoords.y + _row_height - minus - 1};
                         auto yPixelOffset = ScreenCoordsXY{ 0, 1 };
 
                         if (colour.hasFlag(ColourFlag::translucent))
@@ -810,10 +813,10 @@ static WindowClass window_themes_tab_7_classes[] = {
                         const bool isPressed = (i == _colour_index_1 && j == _colour_index_2);
                         auto image = ImageId(isPressed ? SPR_PALETTE_BTN_PRESSED : SPR_PALETTE_BTN, colour.colour);
                         // GfxDrawSprite(dpi, image, { _button_offset_x + 12 * j, screenCoords.y + _button_offset_y });
-                        GfxDrawSprite(dpi, image, { _button_offset_x, screenCoords.y + _button_offset_y + 12 * j });
+                        GfxDrawSprite(dpi, image, { _button_offset_x, screenCoords.y + _button_offset_y + 12 * j - 1 });
 
                         // ScreenCoordsXY topLeft{ _button_offset_x + 12 * j, screenCoords.y + _check_offset_y };
-                        ScreenCoordsXY topLeft{ _check_offset_x, screenCoords.y + _button_offset_y + 12 * j + 1 };
+                        ScreenCoordsXY topLeft{ _check_offset_x, screenCoords.y + _button_offset_y + 12 * j};
 
                         // ScreenCoordsXY bottomRight{ _button_offset_x + 12 * j + 9, screenCoords.y + _check_offset_y + 10 };
                         ScreenCoordsXY bottomRight{ _check_offset_x + 10,
@@ -827,7 +830,7 @@ static WindowClass window_themes_tab_7_classes[] = {
                     }
                 }
 
-                screenCoords.y += _row_height;
+                screenCoords.y += (numColours * 14);
             }
         }
 
@@ -836,6 +839,19 @@ static WindowClass window_themes_tab_7_classes[] = {
         void WindowThemesInitVars()
         {
             _selected_tab = WINDOW_THEMES_TAB_SETTINGS;
+        }
+
+        int8_t GetColourIndexFromCoordinate(int32_t y)
+        {
+            int32_t total = 0;
+            for (int i = 0; i < sizeof(window_themes_tab_classes[_selected_tab]); ++i)
+            {
+                total += ThemeDescGetNumColours(GetWindowClassTabIndex(i));
+                if ((total * 14) >= y) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         WindowClass GetWindowClassTabIndex(int32_t index)
