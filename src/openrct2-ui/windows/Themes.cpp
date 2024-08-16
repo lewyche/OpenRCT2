@@ -684,7 +684,7 @@ static WindowClass window_themes_tab_7_classes[] = {
             if (_selected_tab == WINDOW_THEMES_TAB_SETTINGS || _selected_tab == WINDOW_THEMES_TAB_FEATURES)
                 return {};
 
-            int32_t scrollHeight = GetColourSchemeTabCount() * _row_height;
+            int32_t scrollHeight = GetTotalColoursUpToIndex(sizeof(window_themes_tab_classes[_selected_tab])) * 14;
             int32_t i = scrollHeight - widgets[WIDX_THEMES_LIST].bottom + widgets[WIDX_THEMES_LIST].top + 21;
             if (i < 0)
                 i = 0;
@@ -706,7 +706,7 @@ static WindowClass window_themes_tab_7_classes[] = {
                 WindowClass wc = GetWindowClassTabIndex(_colour_index_1);
                 int32_t numColours = ThemeDescGetNumColours(wc);
 
-                int32_t y2 = screenCoords.y % (numColours * 14);
+                int32_t y2 = screenCoords.y - (GetTotalColoursUpToIndex(_colour_index_1) - numColours) * 14;
                 _colour_index_2 = (y2) / 14;
 
                 if (_colour_index_2 < numColours)
@@ -721,7 +721,7 @@ static WindowClass window_themes_tab_7_classes[] = {
                         else
                         {
                             widgets[WIDX_THEMES_COLOURBTN_MASK].type = WindowWidgetType::ColourBtn;
-                            widgets[WIDX_THEMES_COLOURBTN_MASK].left = _button_offset_x + widgets[WIDX_THEMES_LIST].left;
+                            widgets[WIDX_THEMES_COLOURBTN_MASK].left = _button_offset_x + widgets[WIDX_THEMES_LIST].left + 14;
                             widgets[WIDX_THEMES_COLOURBTN_MASK].top = _colour_index_1 * _row_height + _button_offset_y + 12 * _colour_index_2
                                 - scrolls[0].v_top + widgets[WIDX_THEMES_LIST].top;
                             widgets[WIDX_THEMES_COLOURBTN_MASK].right = widgets[WIDX_THEMES_COLOURBTN_MASK].left + 12;
@@ -784,8 +784,8 @@ static WindowClass window_themes_tab_7_classes[] = {
 
                         int8_t minus = 14 * (4 - numColours);
 
-                        auto leftTop = ScreenCoordsXY{ 0, screenCoords.y + _row_height - minus - 1 };
-                        auto rightBottom = ScreenCoordsXY{ widgets[WIDX_THEMES_LIST].right, screenCoords.y + _row_height - minus - 1};
+                        auto leftTop = ScreenCoordsXY{ 0, screenCoords.y + _row_height - minus};
+                        auto rightBottom = ScreenCoordsXY{ widgets[WIDX_THEMES_LIST].right, screenCoords.y + _row_height - minus};
                         auto yPixelOffset = ScreenCoordsXY{ 0, 1 };
 
                         if (colour.hasFlag(ColourFlag::translucent))
@@ -844,7 +844,7 @@ static WindowClass window_themes_tab_7_classes[] = {
         int8_t GetColourIndexFromCoordinate(int32_t y)
         {
             int32_t total = 0;
-            for (int i = 0; i < sizeof(window_themes_tab_classes[_selected_tab]); ++i)
+            for (int32_t i = 0; i < sizeof(window_themes_tab_classes[_selected_tab]); ++i)
             {
                 total += ThemeDescGetNumColours(GetWindowClassTabIndex(i));
                 if ((total * 14) >= y) {
@@ -852,6 +852,15 @@ static WindowClass window_themes_tab_7_classes[] = {
                 }
             }
             return -1;
+        }
+
+        int8_t GetTotalColoursUpToIndex(int8_t index) {
+            int32_t total = 0;
+            for (int32_t i = 0; i < (index + 1); ++i)
+            {
+                total += ThemeDescGetNumColours(GetWindowClassTabIndex(i));
+            }
+            return total;
         }
 
         WindowClass GetWindowClassTabIndex(int32_t index)
